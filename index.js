@@ -1,6 +1,7 @@
 import fs from "fs";
 import http from "http";
 import url from "url";
+import slugify from "slugify";
 
 import { replaceTemplate } from "./modules/replaceTemplate.js";
 
@@ -18,24 +19,30 @@ const templateProduct = fs.readFileSync(
 // DATA
 const data = fs.readFileSync("./dev-data/data.json", "utf-8");
 const dataObj = JSON.parse(data);
+const updatedDataObj = dataObj.map((el) => ({
+  ...el,
+  slug: slugify(el.productName, { lower: true }),
+}));
 
 // SERVER
 const server = http.createServer((req, res) => {
-  const { query, pathname } = url.parse(req.url, true);
+  const { pathname } = url.parse(req.url, true);
 
   // OVERVIEW page
   if (pathname === "/" || pathname === "/overview") {
     res.writeHead(200, { "Content-type": "text/html" });
-    const cardsHtml = dataObj
+    const cardsHtml = updatedDataObj
       .map((el) => replaceTemplate(templateCard, el))
       .join("");
     const output = templateOverview.replace(/{%PRODUCT_CARDS%}/g, cardsHtml);
     res.end(output);
 
     // PRODUCT page
-  } else if (pathname === "/product/") {
+  } else if (pathname.split("/")[1] === "product") {
     res.writeHead(200, { "Content-type": "text/html" });
-    const product = dataObj[query.id];
+    const product = updatedDataObj.find(
+      (el) => el.slug === pathname.split("/")[2]
+    );
     const output = replaceTemplate(templateProduct, product);
     res.end(output);
 
