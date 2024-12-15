@@ -1,5 +1,6 @@
 import fs from "fs";
 import http from "http";
+import url from "url";
 
 // TEMPLATE
 const templateOverview = fs.readFileSync(
@@ -33,10 +34,10 @@ const replaceTemplate = (temp, product) => {
 
 // SERVER
 const server = http.createServer((req, res) => {
-  const pathName = req.url;
+  const { query, pathname } = url.parse(req.url, true);
 
   // OVERVIEW page
-  if (pathName === "/" || pathName === "/overview") {
+  if (pathname === "/" || pathname === "/overview") {
     res.writeHead(200, { "Content-type": "text/html" });
     const cardsHtml = dataObj
       .map((el) => replaceTemplate(templateCard, el))
@@ -45,12 +46,14 @@ const server = http.createServer((req, res) => {
     res.end(output);
 
     // PRODUCT page
-  } else if (pathName === "/product") {
+  } else if (pathname === "/product/") {
     res.writeHead(200, { "Content-type": "text/html" });
-    res.end("This is the PRODUCT");
+    const product = dataObj[query.id];
+    const output = replaceTemplate(templateProduct, product);
+    res.end(output);
 
     // API
-  } else if (pathName === "/api") {
+  } else if (pathname === "/api") {
     res.writeHead(200, { "Content-type": "application/json" });
     res.end(data);
 
